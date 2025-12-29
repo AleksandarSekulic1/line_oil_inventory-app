@@ -1,20 +1,20 @@
-import { contextBridge } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  // Funkcija koju zovemo iz React-a
+  getProducts: () => ipcRenderer.invoke('get-products')
+}
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+// Expose APIs
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('electron', {}) // Ostavljamo default
+    contextBridge.exposeInMainWorld('api', api)     // Dodajemo nas API
   } catch (error) {
     console.error(error)
   }
 } else {
-  window.electron = electronAPI
+  window.electron = {}
   window.api = api
 }
