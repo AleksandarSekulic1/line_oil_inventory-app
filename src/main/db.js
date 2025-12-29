@@ -6,6 +6,7 @@ import { JSONFilePreset } from 'lowdb/node'
 const defaultData = {
   proizvodnja: [],
   prodaja: [],
+  istorija: [],
   proizvodi: [
     // --- ULJA ---
     { id: "364", naziv: "SAE 10w40 UNIVERSAL", zapremina: "1L", stanje: 0 },

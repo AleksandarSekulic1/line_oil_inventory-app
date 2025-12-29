@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import AddProduct from './components/AddProduct'
 import DodajNaStanje from './components/DodajNaStanje'
+import SkiniSaStanja from './components/SkiniSaStanja' // <--- IMPORT
 
 // Pomocna funkcija za ID
 const generateId = () => {
@@ -100,6 +101,10 @@ function App() {
         {/* DODAJ NA STANJE */}
         {aktivnaStranica === 'stanje' && (
           <DodajNaStanje />
+        )}
+        
+        {aktivnaStranica === 'prodaja' && (
+          <SkiniSaStanja />
         )}
 
       </div>

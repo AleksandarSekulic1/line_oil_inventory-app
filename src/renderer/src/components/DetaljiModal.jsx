@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react'
 
 // --- IZDVOJENA KOMPONENTA ZA RED ISTORIJE ---
 const RedIstorije = ({ stavka, editId, editData, setEditData, zapocniEdit, sacuvajEdit, otkazhiEdit }) => {
+  const jeIzlaz = stavka.kolicina < 0;
+
+  // --- MOD ZA EDITOVANJE ---
   if (editId === stavka.id) {
     return (
       <tr style={{ borderBottom: '1px solid #eee', background: '#fff9c4' }}>
@@ -10,7 +13,7 @@ const RedIstorije = ({ stavka, editId, editData, setEditData, zapocniEdit, sacuv
             type="date" 
             value={editData.datum} 
             onChange={e => setEditData({...editData, datum: e.target.value})} 
-            style={{ padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
+            style={{ padding: '5px', borderRadius: '4px', border: '1px solid #ccc', width: '100%' }}
           />
         </td>
         <td>
@@ -21,6 +24,7 @@ const RedIstorije = ({ stavka, editId, editData, setEditData, zapocniEdit, sacuv
             style={{ width: '80px', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
           />
         </td>
+        <td style={{ fontSize: '0.8em', color: '#7f8c8d' }}>(Opis se ne menja)</td>
         <td>
           <button onClick={sacuvajEdit} style={{ background: '#27ae60', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', marginRight: '5px' }}>✓</button>
           <button onClick={otkazhiEdit} style={{ background: '#c0392b', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}>✗</button>
@@ -29,12 +33,34 @@ const RedIstorije = ({ stavka, editId, editData, setEditData, zapocniEdit, sacuv
     )
   }
 
+  // --- OBICAN PRIKAZ REDA ---
   return (
-    <tr style={{ borderBottom: '1px solid #eee', color: '#333' }}>
+    <tr style={{ borderBottom: '1px solid #eee', color: '#333', backgroundColor: jeIzlaz ? '#fff5f5' : 'white' }}>
       <td style={{ padding: '10px' }}>{stavka.datum}</td>
-      <td style={{ padding: '10px', fontWeight: 'bold', color: stavka.kolicina > 0 ? '#27ae60' : '#e74c3c' }}>
+      
+      <td style={{ padding: '10px', fontWeight: 'bold', color: jeIzlaz ? '#c0392b' : '#27ae60' }}>
         {stavka.kolicina > 0 ? `+${stavka.kolicina}` : stavka.kolicina}
       </td>
+
+      <td style={{ padding: '10px', fontSize: '0.9em' }}>
+        {jeIzlaz ? (
+            <div>
+                <strong>👤 {stavka.kupac || "Nepoznat kupac"}</strong>
+                
+                {/* PRIKAZ DATUMA ISPORUKE */}
+                {stavka.datumIsporuke && (
+                    <div style={{ color: '#c0392b', marginTop: '2px', fontWeight: '500' }}>
+                        🚚 Isporuka: {stavka.datumIsporuke}
+                    </div>
+                )}
+                
+                {stavka.adresa && <div style={{ color: '#7f8c8d', fontSize: '0.9em' }}>📍 {stavka.adresa}</div>}
+            </div>
+        ) : (
+            <span style={{ color: '#27ae60' }}>📦 Nabavka / Korekcija</span>
+        )}
+      </td>
+
       <td style={{ padding: '10px' }}>
         <button onClick={() => zapocniEdit(stavka)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '18px' }}>✏️</button>
       </td>
@@ -48,8 +74,6 @@ export default function DetaljiModal({ proizvod, onClose, osveziSve }) {
   const [editId, setEditId] = useState(null)
   const [editData, setEditData] = useState({ kolicina: '', datum: '' })
 
-  // Kad se proizvod promeni (jer je Dashboard poslao novu verziju),
-  // ponovo ucitaj istoriju da budemo sigurni
   useEffect(() => {
     if (proizvod) {
       ucitajIstoriju()
@@ -72,21 +96,13 @@ export default function DetaljiModal({ proizvod, onClose, osveziSve }) {
 
   const sacuvajEdit = async () => {
     try {
-        // 1. Posalji izmenu backendu
         await window.api.editHistoryEntry({
             entryId: editId,
             novaKolicina: editData.kolicina,
             noviDatum: editData.datum
         })
-        
-        // 2. Resetuj edit mod
         setEditId(null)
-        
-        // 3. Osvezi lokalnu listu istorije (za svaki slucaj)
         await ucitajIstoriju() 
-        
-        // 4. KLJUČNO: Javi glavnoj aplikaciji da osvezi SVE
-        // Ovo ce azurirati Dashboard, a Dashboard ce preko useEffect-a azurirati ovaj Modal!
         if (osveziSve) {
             await osveziSve()
         }
@@ -106,7 +122,7 @@ export default function DetaljiModal({ proizvod, onClose, osveziSve }) {
     }}>
       <div style={{ 
           background: 'white', 
-          width: '600px', 
+          width: '700px', 
           maxHeight: '85vh', 
           overflowY: 'auto', 
           borderRadius: '12px', 
@@ -131,7 +147,6 @@ export default function DetaljiModal({ proizvod, onClose, osveziSve }) {
           {proizvod.naziv} <span style={{ fontSize: '0.6em', color: '#7f8c8d' }}>({proizvod.zapremina})</span>
         </h2>
 
-        {/* INFO KARTICA - Broj ce se sada automatski menjati! */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', background: '#f8f9fa', padding: '15px', borderRadius: '8px', border: '1px solid #e9ecef' }}>
             <div style={{color: '#2c3e50'}}><strong>Šifra:</strong> {proizvod.id}</div>
             <div style={{ fontSize: '1.2em', color: '#2c3e50' }}><strong>Trenutno stanje:</strong> <span style={{ color: '#2980b9', fontWeight: 'bold' }}>{proizvod.stanje}</span></div>
@@ -144,6 +159,7 @@ export default function DetaljiModal({ proizvod, onClose, osveziSve }) {
             <tr style={{ background: '#ecf0f1', textAlign: 'left', color: '#2c3e50' }}>
               <th style={{ padding: '10px', borderBottom: '2px solid #bdc3c7' }}>Datum</th>
               <th style={{ padding: '10px', borderBottom: '2px solid #bdc3c7' }}>Promena</th>
+              <th style={{ padding: '10px', borderBottom: '2px solid #bdc3c7' }}>Opis / Kupac</th>
               <th style={{ padding: '10px', borderBottom: '2px solid #bdc3c7' }}>Akcija</th>
             </tr>
           </thead>
@@ -163,7 +179,7 @@ export default function DetaljiModal({ proizvod, onClose, osveziSve }) {
                 ))
             ) : (
                 <tr>
-                    <td colSpan="3" style={{textAlign: 'center', padding: '20px', color: '#7f8c8d'}}>
+                    <td colSpan="4" style={{textAlign: 'center', padding: '20px', color: '#7f8c8d'}}>
                         Nema istorije promena za ovaj proizvod.
                     </td>
                 </tr>

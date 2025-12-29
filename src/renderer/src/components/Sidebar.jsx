@@ -53,6 +53,12 @@ export default function Sidebar({ aktivnaStranica, setAktivnaStranica }) {
         >
           📦 Dodaj na Stanje
         </button>
+        <button 
+          onClick={() => setAktivnaStranica('prodaja')}
+          style={{ ...dugmeStil('prodaja'), color: '#e74c3c' }} // Malo crvenkasto da se razlikuje
+        >
+          📉 Skini / Prodaj
+        </button>
       </nav>
 
       <div style={{ padding: '20px', fontSize: '12px', color: '#7f8c8d', textAlign: 'center' }}>

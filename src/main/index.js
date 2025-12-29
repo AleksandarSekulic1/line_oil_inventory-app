@@ -176,6 +176,62 @@ app.whenReady().then(() => {
     return true
   })
 
+  // 8. SKINI SA STANJA
+  ipcMain.handle('remove-stock-entry', async (event, params) => {
+    // Dodali smo datumIsporuke u destrukturiranje
+    const { proizvodId, kolicina, datum, kupac, adresa, datumIsporuke } = params
+    
+    console.log("--- PRODAJA ---")
+    console.log(`Kupac: ${kupac}, Datum isporuke: ${datumIsporuke}`)
+
+    const db = await connectDB()
+    const kolicinaBroj = parseInt(kolicina)
+
+    let uspesno = false
+    let poruka = ""
+
+    await db.update((data) => {
+      const proizvodIndex = data.proizvodi.findIndex(p => String(p.id) === String(proizvodId))
+      
+      if (proizvodIndex === -1) {
+        poruka = "Proizvod nije pronađen!"
+        return
+      }
+
+      const proizvod = data.proizvodi[proizvodIndex]
+      const trenutnoStanje = parseInt(proizvod.stanje) || 0
+
+      if (trenutnoStanje < kolicinaBroj) {
+        poruka = `Nema dovoljno na stanju! Trenutno: ${trenutnoStanje}, Traženo: ${kolicinaBroj}`
+        return
+      }
+
+      // Skini stanje
+      data.proizvodi[proizvodIndex].stanje = trenutnoStanje - kolicinaBroj
+      
+      // Upisi u istoriju
+      const noviZapis = {
+        id: Date.now().toString(),
+        proizvodId,
+        kolicina: -kolicinaBroj,
+        datum,
+        tip: 'izlaz',
+        kupac: kupac || 'Nepoznat kupac',
+        adresa: adresa || '',
+        datumIsporuke: datumIsporuke || '' // <--- NOVO POLJE U BAZI
+      }
+
+      data.istorija = [...(data.istorija || []), noviZapis]
+      uspesno = true
+    })
+
+    if (!uspesno) {
+      throw new Error(poruka)
+    }
+    
+    return true
+  })
+
   // ------------------------------------
 
   createWindow()

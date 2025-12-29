@@ -8,6 +8,7 @@ const api = {
   updateProduct: (proizvod) => ipcRenderer.invoke('update-product', proizvod),
   resetApp: () => ipcRenderer.invoke('reset-database'),
   addStockEntry: (data) => ipcRenderer.invoke('add-stock-entry', data),
+  removeStockEntry: (data) => ipcRenderer.invoke('remove-stock-entry', data),
   getProductHistory: (id) => ipcRenderer.invoke('get-product-history', id),
   editHistoryEntry: (data) => ipcRenderer.invoke('edit-history-entry', data),
 }
