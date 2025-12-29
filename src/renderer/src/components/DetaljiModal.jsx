@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
-// --- 1. IZDVOJENA KOMPONENTA ZA RED ISTORIJE ---
-// Ovo resava problem "zamrznutih" input polja!
+// --- IZDVOJENA KOMPONENTA ZA RED ISTORIJE ---
 const RedIstorije = ({ stavka, editId, editData, setEditData, zapocniEdit, sacuvajEdit, otkazhiEdit }) => {
-  // Ako je ovaj red u modusu za editovanje:
   if (editId === stavka.id) {
     return (
       <tr style={{ borderBottom: '1px solid #eee', background: '#fff9c4' }}>
@@ -31,7 +29,6 @@ const RedIstorije = ({ stavka, editId, editData, setEditData, zapocniEdit, sacuv
     )
   }
 
-  // Obican prikaz reda:
   return (
     <tr style={{ borderBottom: '1px solid #eee', color: '#333' }}>
       <td style={{ padding: '10px' }}>{stavka.datum}</td>
@@ -45,17 +42,19 @@ const RedIstorije = ({ stavka, editId, editData, setEditData, zapocniEdit, sacuv
   )
 }
 
-// --- GLAVNA KOMPONENTA MODALA ---
+// --- GLAVNA KOMPONENTA ---
 export default function DetaljiModal({ proizvod, onClose, osveziSve }) {
   const [istorija, setIstorija] = useState([])
   const [editId, setEditId] = useState(null)
   const [editData, setEditData] = useState({ kolicina: '', datum: '' })
 
+  // Kad se proizvod promeni (jer je Dashboard poslao novu verziju),
+  // ponovo ucitaj istoriju da budemo sigurni
   useEffect(() => {
     if (proizvod) {
       ucitajIstoriju()
     }
-  }, [proizvod]) // Ucitaj ponovo ako se proizvod promeni (to smo sredili u Dashboardu)
+  }, [proizvod])
 
   const ucitajIstoriju = async () => {
     const data = await window.api.getProductHistory(proizvod.id)
@@ -73,16 +72,21 @@ export default function DetaljiModal({ proizvod, onClose, osveziSve }) {
 
   const sacuvajEdit = async () => {
     try {
+        // 1. Posalji izmenu backendu
         await window.api.editHistoryEntry({
             entryId: editId,
             novaKolicina: editData.kolicina,
             noviDatum: editData.datum
         })
         
+        // 2. Resetuj edit mod
         setEditId(null)
-        await ucitajIstoriju() // Osvezi istoriju
         
-        // Javi Dashboardu da osvezi SVE proizvode
+        // 3. Osvezi lokalnu listu istorije (za svaki slucaj)
+        await ucitajIstoriju() 
+        
+        // 4. KLJUČNO: Javi glavnoj aplikaciji da osvezi SVE
+        // Ovo ce azurirati Dashboard, a Dashboard ce preko useEffect-a azurirati ovaj Modal!
         if (osveziSve) {
             await osveziSve()
         }
@@ -127,7 +131,7 @@ export default function DetaljiModal({ proizvod, onClose, osveziSve }) {
           {proizvod.naziv} <span style={{ fontSize: '0.6em', color: '#7f8c8d' }}>({proizvod.zapremina})</span>
         </h2>
 
-        {/* INFO KARTICA - Sada ce se broj azurirati jer Dashboard salje novi prop */}
+        {/* INFO KARTICA - Broj ce se sada automatski menjati! */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', background: '#f8f9fa', padding: '15px', borderRadius: '8px', border: '1px solid #e9ecef' }}>
             <div style={{color: '#2c3e50'}}><strong>Šifra:</strong> {proizvod.id}</div>
             <div style={{ fontSize: '1.2em', color: '#2c3e50' }}><strong>Trenutno stanje:</strong> <span style={{ color: '#2980b9', fontWeight: 'bold' }}>{proizvod.stanje}</span></div>

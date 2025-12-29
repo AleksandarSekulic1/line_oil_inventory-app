@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import EditProductModal from './EditProductModal'
 import DetaljiModal from './DetaljiModal'
 
-// --- 1. KOMPONENTA ZA RED (Van glavne funkcije da ne gubi fokus) ---
+// --- KOMPONENTA ZA RED (Van glavne funkcije) ---
 const RedTabele = ({ p, dobijBojuReda, naKlik, naIzmenu, naBrisanje }) => {
   const [hover, setHover] = useState(false)
   const trenutnaBoja = hover ? '#fff9c4' : dobijBojuReda(p.stanje)
@@ -42,17 +42,20 @@ export default function Dashboard({ proizvodi, onDelete, onUpdate, osveziPodatke
   const [odabraniProizvod, setOdabraniProizvod] = useState(null) 
   const [proizvodZaIzmenu, setProizvodZaIzmenu] = useState(null)
 
-  // --- NOVO: AUTOMATSKO AŽURIRANJE MODALA ---
-  // Kad se "proizvodi" promene (posle čuvanja), mi tražimo novu verziju
-  // onog proizvoda koji je trenutno otvoren u modalu.
+  // --- OVO JE KLJUČNO ZA AZURIRANJE MODALA ---
+  // Kada se "proizvodi" promene (jer je DetaljiModal pozvao osveziSve),
+  // ovaj kod pronalazi novu verziju tog proizvoda i odmah je ubacuje u modal!
   useEffect(() => {
     if (odabraniProizvod) {
-        const osvezenProizvod = proizvodi.find(p => p.id === odabraniProizvod.id)
+        // Nadji najnoviju verziju trenutno otvorenog proizvoda
+        const osvezenProizvod = proizvodi.find(p => String(p.id) === String(odabraniProizvod.id))
+        
+        // Ako postoji (nije obrisan), azuriraj modal
         if (osvezenProizvod) {
             setOdabraniProizvod(osvezenProizvod)
         }
     }
-  }, [proizvodi]) // Prati promene u glavnoj listi
+  }, [proizvodi]) // Prati svaku promenu u glavnoj listi
 
   // Filtriranje
   const filtriraniLista = (proizvodi || []).filter(p => {
@@ -141,7 +144,7 @@ export default function Dashboard({ proizvodi, onDelete, onUpdate, osveziPodatke
         <DetaljiModal 
             proizvod={odabraniProizvod} 
             onClose={() => setOdabraniProizvod(null)}
-            osveziSve={osveziPodatke} 
+            osveziSve={osveziPodatke} // Prosleđujemo funkciju za osvežavanje
         />
       )}
 
