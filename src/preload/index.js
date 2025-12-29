@@ -2,8 +2,10 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 // Custom APIs for renderer
 const api = {
-  // Funkcija koju zovemo iz React-a
-  getProducts: () => ipcRenderer.invoke('get-products')
+  getProducts: () => ipcRenderer.invoke('get-products'),
+  addProduct: (proizvod) => ipcRenderer.invoke('add-product', proizvod),
+  deleteProduct: (id) => ipcRenderer.invoke('delete-product', id),
+  updateProduct: (proizvod) => ipcRenderer.invoke('update-product', proizvod)
 }
 
 // Expose APIs

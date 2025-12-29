@@ -41,11 +41,38 @@ app.whenReady().then(() => {
   })
 
   // --- OVO JE DEO GDE SPAJAMO BAZU ---
-  // 1. React trazi proizvode -> Mi vracamo iz baze
+  // 1. Učitaj sve proizvode
   ipcMain.handle('get-products', async () => {
     const db = await connectDB()
     await db.read()
     return db.data.proizvodi
+  })
+
+  // 2. Dodaj novi proizvod
+  ipcMain.handle('add-product', async (event, noviProizvod) => {
+    const db = await connectDB()
+    await db.update(({ proizvodi }) => proizvodi.push(noviProizvod))
+    return true
+  })
+
+  // 3. Obriši proizvod
+  ipcMain.handle('delete-product', async (event, idProizvoda) => {
+    const db = await connectDB()
+    await db.update(({ proizvodi }) => {
+      const index = proizvodi.findIndex(p => p.id === idProizvoda)
+      if (index !== -1) proizvodi.splice(index, 1)
+    })
+    return true
+  })
+
+  // 4. Ažuriraj (Izmeni) proizvod
+  ipcMain.handle('update-product', async (event, azuriranProizvod) => {
+    const db = await connectDB()
+    await db.update(({ proizvodi }) => {
+      const index = proizvodi.findIndex(p => p.id === azuriranProizvod.id)
+      if (index !== -1) proizvodi[index] = azuriranProizvod
+    })
+    return true
   })
   // ------------------------------------
 
