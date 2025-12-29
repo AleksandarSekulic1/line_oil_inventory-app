@@ -233,6 +233,33 @@ app.whenReady().then(() => {
     return true
   })
 
+  // 9. DOHVATI SVE ISPORUKE (Samo izlazi)
+  ipcMain.handle('get-all-deliveries', async () => {
+    const db = await connectDB()
+    await db.read()
+    // Vracamo samo one stavke koje su 'izlaz' (prodaja)
+    return (db.data.istorija || []).filter(i => i.tip === 'izlaz')
+  })
+
+  // 10. AZURIRAJ GRUPU ISPORUKA (Placeno / Napomena)
+  ipcMain.handle('update-delivery-group', async (event, { ids, placeno, napomena }) => {
+    const db = await connectDB()
+    await db.update((data) => {
+      data.istorija = data.istorija.map(stavka => {
+        // Ako je ID stavke u listi ID-jeva koje azuriramo
+        if (ids.includes(stavka.id)) {
+          return { 
+            ...stavka, 
+            placeno: placeno, 
+            napomena: napomena 
+          }
+        }
+        return stavka
+      })
+    })
+    return true
+  })
+  
   // ------------------------------------
 
   createWindow()

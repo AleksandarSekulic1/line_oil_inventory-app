@@ -11,6 +11,8 @@ const api = {
   removeStockEntry: (data) => ipcRenderer.invoke('remove-stock-entry', data),
   getProductHistory: (id) => ipcRenderer.invoke('get-product-history', id),
   editHistoryEntry: (data) => ipcRenderer.invoke('edit-history-entry', data),
+  getAllDeliveries: () => ipcRenderer.invoke('get-all-deliveries'),
+  updateDeliveryGroup: (data) => ipcRenderer.invoke('update-delivery-group', data),
 }
 
 // Expose APIs

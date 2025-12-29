@@ -55,9 +55,15 @@ export default function Sidebar({ aktivnaStranica, setAktivnaStranica }) {
         </button>
         <button 
           onClick={() => setAktivnaStranica('prodaja')}
-          style={{ ...dugmeStil('prodaja'), color: '#e74c3c' }} // Malo crvenkasto da se razlikuje
+          style={{ ...dugmeStil('prodaja') }} // Malo crvenkasto da se razlikuje
         >
           📉 Skini / Prodaj
+        </button>
+        <button 
+          onClick={() => setAktivnaStranica('isporuke')}
+          style={{ ...dugmeStil('isporuke') }} 
+        >
+          🚚 Isporuke & Računi
         </button>
       </nav>
 

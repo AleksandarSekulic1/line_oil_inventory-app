@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard'
 import AddProduct from './components/AddProduct'
 import DodajNaStanje from './components/DodajNaStanje'
 import SkiniSaStanja from './components/SkiniSaStanja' // <--- IMPORT
+import Isporuke from './components/Isporuke' // <--- IMPORT
 
 // Pomocna funkcija za ID
 const generateId = () => {
@@ -102,9 +103,13 @@ function App() {
         {aktivnaStranica === 'stanje' && (
           <DodajNaStanje />
         )}
-        
+
         {aktivnaStranica === 'prodaja' && (
           <SkiniSaStanja />
+        )}
+        
+        {aktivnaStranica === 'isporuke' && (
+          <Isporuke />
         )}
 
       </div>
