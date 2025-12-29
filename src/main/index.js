@@ -176,17 +176,17 @@ app.whenReady().then(() => {
     return true
   })
 
-  // 8. SKINI SA STANJA
+// 8. SKINI SA STANJA (ISPRAVKA ZA DATUM ISPORUKE)
   ipcMain.handle('remove-stock-entry', async (event, params) => {
-    // Dodali smo datumIsporuke u destrukturiranje
+    // 1. Ovde eksplicitno vadimo datumIsporuke
     const { proizvodId, kolicina, datum, kupac, adresa, datumIsporuke } = params
     
+    // Debug log da vidimo sta stize
     console.log("--- PRODAJA ---")
-    console.log(`Kupac: ${kupac}, Datum isporuke: ${datumIsporuke}`)
+    console.log("Datum isporuke stize:", datumIsporuke) 
 
     const db = await connectDB()
     const kolicinaBroj = parseInt(kolicina)
-
     let uspesno = false
     let poruka = ""
 
@@ -218,7 +218,8 @@ app.whenReady().then(() => {
         tip: 'izlaz',
         kupac: kupac || 'Nepoznat kupac',
         adresa: adresa || '',
-        datumIsporuke: datumIsporuke || '' // <--- NOVO POLJE U BAZI
+        // OVO MORA BITI UPISANO:
+        datumIsporuke: datumIsporuke || '' 
       }
 
       data.istorija = [...(data.istorija || []), noviZapis]
