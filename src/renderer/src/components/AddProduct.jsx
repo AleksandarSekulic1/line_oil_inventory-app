@@ -1,28 +1,34 @@
-// src/renderer/src/components/AddProduct.jsx
 import React, { useState } from 'react'
 
 export default function AddProduct({ onSave, proizvodi }) {
+  // Resetujemo formu na početne vrednosti
   const [noviProizvod, setNoviProizvod] = useState({ id: '', naziv: '', zapremina: '', stanje: 0 })
   const [greska, setGreska] = useState('')
 
   const sacuvaj = () => {
+    // Validacija praznih polja
     if (!noviProizvod.id || !noviProizvod.naziv || !noviProizvod.zapremina) {
       setGreska('Sva polja su obavezna!')
       return
     }
-    // Provera duplikata
-    if (proizvodi.some(p => p.id === noviProizvod.id)) {
+
+    // Provera duplikata (sa zaštitom da 'proizvodi' ne bude undefined)
+    const postojeProizvodi = proizvodi || []
+    if (postojeProizvodi.some(p => String(p.id) === String(noviProizvod.id))) {
       setGreska('Proizvod sa ovom šifrom već postoji!')
       return
     }
     
+    // Slanje u App.js
     onSave(noviProizvod)
+    
+    // Resetovanje forme nakon uspešnog čuvanja
     setNoviProizvod({ id: '', naziv: '', zapremina: '', stanje: 0 })
     setGreska('')
   }
 
-  // Stilovi za input polja
-  const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#2c3e50' } // TAMNA BOJA!
+  // Stilovi
+  const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#2c3e50' }
   const inputStyle = { width: '100%', padding: '12px', border: '1px solid #bdc3c7', borderRadius: '6px', fontSize: '16px', color: '#333', background: '#fff' }
 
   return (

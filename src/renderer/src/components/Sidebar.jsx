@@ -47,6 +47,12 @@ export default function Sidebar({ aktivnaStranica, setAktivnaStranica }) {
         >
           ➕ Dodaj Proizvod
         </button>
+        <button 
+          onClick={() => setAktivnaStranica('stanje')}
+          style={dugmeStil('stanje')}
+        >
+          📦 Dodaj na Stanje
+        </button>
       </nav>
 
       <div style={{ padding: '20px', fontSize: '12px', color: '#7f8c8d', textAlign: 'center' }}>

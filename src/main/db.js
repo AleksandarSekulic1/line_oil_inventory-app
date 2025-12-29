@@ -1,5 +1,6 @@
 import { app } from 'electron'
 import path from 'path'
+import fs from 'fs' 
 import { JSONFilePreset } from 'lowdb/node'
 
 const defaultData = {
@@ -26,7 +27,7 @@ const defaultData = {
     { id: "332", naziv: "DVOTAKTOL-W", zapremina: "100ml", stanje: 0 },
     { id: "488", naziv: "DVOTAKTOL-W", zapremina: "1L", stanje: 0 },
     { id: "888", naziv: "DVOTAKTOL-W", zapremina: "5L", stanje: 0 },
-    { id: "890", naziv: "TRAKTOR OIL 80", zapremina: "5L", stanje: 0 }, // Proveri sifru, mozda je ista
+    { id: "890", naziv: "TRAKTOR OIL 80", zapremina: "5L", stanje: 0 }, 
     { id: "391", naziv: "TRAKTOR OIL 80", zapremina: "5L", stanje: 0 },
     { id: "307", naziv: "TRAKTOR OIL 80", zapremina: "10L", stanje: 0 },
     { id: "319", naziv: "SAE 90 GEAR-2", zapremina: "1L", stanje: 0 },
@@ -87,7 +88,25 @@ const defaultData = {
 }
 
 export const connectDB = async () => {
+  // 1. OVO MORA BITI PRVA LINIJA U FUNKCIJI - pravljenje putanje
   const dbPath = path.join(app.getPath('userData'), 'inventory-db.json')
+  
+  // 2. TEK SADA MOZEMO DA JE KORISTIMO - ispis u konzolu
+  console.log("--------------------------------------------------")
+  console.log("PUTANJA BAZE PODATAKA JE:", dbPath)
+  console.log("--------------------------------------------------")
+
+  // 3. BRISANJE BAZE (Otkomentarisi linije ispod AKO ZELIS RESET, inace neka ostanu pod //)
+  // if (fs.existsSync(dbPath)) {
+  //   try {
+  //     fs.unlinkSync(dbPath)
+  //     console.log("!!! STARA BAZA JE OBRISANA. KREIRAM NOVU... !!!")
+  //   } catch (err) {
+  //     console.error("Greska pri brisanju baze:", err)
+  //   }
+  // }
+
+  // 4. Ucitavanje baze (ovo ce kreirati novu ako je stara obrisana)
   const db = await JSONFilePreset(dbPath, defaultData)
   return db
 }

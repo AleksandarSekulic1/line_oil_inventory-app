@@ -5,7 +5,11 @@ const api = {
   getProducts: () => ipcRenderer.invoke('get-products'),
   addProduct: (proizvod) => ipcRenderer.invoke('add-product', proizvod),
   deleteProduct: (id) => ipcRenderer.invoke('delete-product', id),
-  updateProduct: (proizvod) => ipcRenderer.invoke('update-product', proizvod)
+  updateProduct: (proizvod) => ipcRenderer.invoke('update-product', proizvod),
+  resetApp: () => ipcRenderer.invoke('reset-database'),
+  addStockEntry: (data) => ipcRenderer.invoke('add-stock-entry', data),
+  getProductHistory: (id) => ipcRenderer.invoke('get-product-history', id),
+  editHistoryEntry: (data) => ipcRenderer.invoke('edit-history-entry', data),
 }
 
 // Expose APIs

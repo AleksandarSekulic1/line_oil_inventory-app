@@ -2,7 +2,8 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { connectDB } from './db' // <--- UVOZIMO NASU BAZU
+import { connectDB } from './db' // <--- Ovo ti je dobro, ostavljamo
+import fs from 'fs' // <--- 1. DODATO: Treba nam za brisanje fajla
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -40,40 +41,141 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // --- OVO JE DEO GDE SPAJAMO BAZU ---
+  // --- HANDLERI ZA BAZU (Optimizovani) ---
+
   // 1. Učitaj sve proizvode
   ipcMain.handle('get-products', async () => {
     const db = await connectDB()
     await db.read()
-    return db.data.proizvodi
+    // Vraćamo prazan niz ako nema proizvoda, da ne pukne frontend
+    return db.data.proizvodi || []
   })
 
   // 2. Dodaj novi proizvod
   ipcMain.handle('add-product', async (event, noviProizvod) => {
     const db = await connectDB()
-    await db.update(({ proizvodi }) => proizvodi.push(noviProizvod))
+    await db.update((data) => {
+      // Pravimo novu kopiju niza sa novim proizvodom (Sigurnije od push)
+      data.proizvodi = [...(data.proizvodi || []), noviProizvod]
+    })
     return true
   })
 
   // 3. Obriši proizvod
   ipcMain.handle('delete-product', async (event, idProizvoda) => {
     const db = await connectDB()
-    await db.update(({ proizvodi }) => {
-      const index = proizvodi.findIndex(p => p.id === idProizvoda)
-      if (index !== -1) proizvodi.splice(index, 1)
+    await db.update((data) => {
+      // Koristimo filter umesto splice - mnogo stabilnije
+      // Pretvaramo u String da bismo bili sigurni da brišemo pravi ID
+      data.proizvodi = (data.proizvodi || []).filter(p => String(p.id) !== String(idProizvoda))
     })
     return true
   })
 
-  // 4. Ažuriraj (Izmeni) proizvod
+  // 4. Ažuriraj proizvod
   ipcMain.handle('update-product', async (event, azuriranProizvod) => {
     const db = await connectDB()
-    await db.update(({ proizvodi }) => {
-      const index = proizvodi.findIndex(p => p.id === azuriranProizvod.id)
-      if (index !== -1) proizvodi[index] = azuriranProizvod
+    await db.update((data) => {
+      // Mapiramo niz i zamenjujemo samo onaj koji se menja
+      data.proizvodi = (data.proizvodi || []).map(p => 
+        String(p.id) === String(azuriranProizvod.id) ? azuriranProizvod : p
+      )
     })
     return true
   })
+
+  // 5. DODAJ NA STANJE (Unos nove promene)
+  ipcMain.handle('add-stock-entry', async (event, { proizvodId, kolicina, datum, tip }) => {
+  console.log("------------------------------------------------")
+  console.log("BACKEND PRIMIO ZAHTEV:", { proizvodId, kolicina, datum, tip })
+
+  const db = await connectDB()
+  
+  // Pretvaramo kolicinu u broj (za svaki slucaj)
+  const kolicinaBroj = parseInt(kolicina)
+  
+  if (isNaN(kolicinaBroj)) {
+    console.error("GRESKA: Kolicina nije broj!")
+    return false
+  }
+
+  await db.update((data) => {
+    // 1. Dodajemo zapis u istoriju
+    const entryId = Date.now().toString()
+    data.istorija = [...(data.istorija || []), {
+      id: entryId,
+      proizvodId,
+      kolicina: kolicinaBroj,
+      datum,
+      tip
+    }]
+    console.log("-> Upisano u istoriju.")
+
+    // 2. Azuriramo trenutno stanje proizvoda
+    let proizvodPronadjen = false
+    
+    data.proizvodi = data.proizvodi.map(p => {
+      // POREDJENJE ID-a: Pretvaramo oba u String da budemo 100% sigurni
+      if (String(p.id) === String(proizvodId)) {
+        console.log(`-> Proizvod pronadjen: ${p.naziv}`)
+        console.log(`-> Staro stanje: ${p.stanje}, Dodajem: ${kolicinaBroj}`)
+        
+        const novoStanje = (parseInt(p.stanje) || 0) + kolicinaBroj
+        proizvodPronadjen = true
+        
+        console.log(`-> NOVO STANJE: ${novoStanje}`)
+        return { ...p, stanje: novoStanje }
+      }
+      return p
+    })
+
+    if (!proizvodPronadjen) {
+      console.error("GRESKA: Proizvod sa ID-jem " + proizvodId + " nije pronadjen u bazi!")
+    }
+  })
+  
+  console.log("------------------------------------------------")
+  return true
+})
+  // 6. UČITAJ ISTORIJU ZA PROIZVOD
+  ipcMain.handle('get-product-history', async (event, proizvodId) => {
+    const db = await connectDB()
+    await db.read()
+    const istorija = (db.data.istorija || [])
+      .filter(item => String(item.proizvodId) === String(proizvodId))
+      .sort((a, b) => new Date(b.datum) - new Date(a.datum)) // Sortiramo od najnovijeg
+    return istorija
+  })
+
+  // 7. IZMENI ISTORIJU (U slucaju greske)
+  ipcMain.handle('edit-history-entry', async (event, { entryId, novaKolicina, noviDatum }) => {
+    const db = await connectDB()
+    const novaKol = parseInt(novaKolicina)
+
+    await db.update((data) => {
+      // Nadjemo stari zapis da vidimo kolika je bila stara kolicina
+      const stariZapis = data.istorija.find(i => i.id === entryId)
+      if (!stariZapis) return
+
+      const staraKolicina = parseInt(stariZapis.kolicina)
+      const razlika = novaKol - staraKolicina
+
+      // 1. Azuriramo zapis u istoriji
+      data.istorija = data.istorija.map(i => 
+        i.id === entryId ? { ...i, kolicina: novaKol, datum: noviDatum } : i
+      )
+
+      // 2. Azuriramo stanje proizvoda za tu razliku (da se matematika slozi)
+      data.proizvodi = data.proizvodi.map(p => {
+        if (String(p.id) === String(stariZapis.proizvodId)) {
+          return { ...p, stanje: (parseInt(p.stanje) || 0) + razlika }
+        }
+        return p
+      })
+    })
+    return true
+  })
+
   // ------------------------------------
 
   createWindow()
