@@ -1,9 +1,9 @@
 {
-  "name": "inventory-app",
+  "name": "line-oil-inventory",
   "version": "1.0.0",
-  "description": "An Electron application with React",
+  "description": "Sistem za praćenje lagera - Line Oil",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "Aleksandar Sekulic",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",

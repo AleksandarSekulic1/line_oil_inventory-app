@@ -1,41 +1,29 @@
-appId: com.electron.app
-productName: inventory-app
+appId: com.lineoil.inventory
+productName: Line Oil Inventory
 directories:
-  buildResources: build
+  buildResources: resources
+  output: dist
 files:
   - '!**/.vscode/*'
   - '!src/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{.eslint*,prettier*,tsconfig*,jscpd*,vitest*,babel*,*.code-workspace,.gitignore,.gitattributes}'
+  - '!README.md'
+  - dist
+  - out
 asarUnpack:
   - resources/**
 win:
-  executableName: inventory-app
+  executableName: LineOilInventory
+  icon: resources/icon.ico
+  target: nsis
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
-mac:
-  entitlementsInherit: build/entitlements.mac.plist
-  extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  notarize: false
-dmg:
-  artifactName: ${name}-${version}.${ext}
-linux:
-  target:
-    - AppImage
-    - snap
-    - deb
-  maintainer: electronjs.org
-  category: Utility
-appImage:
-  artifactName: ${name}-${version}.${ext}
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Line Oil Inventory
+  artifactName: ${productName}-Setup-${version}.${ext}
 npmRebuild: false
 publish:
   provider: generic
