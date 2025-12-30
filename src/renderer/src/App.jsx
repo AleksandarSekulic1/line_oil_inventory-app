@@ -3,10 +3,10 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import AddProduct from './components/AddProduct'
 import DodajNaStanje from './components/DodajNaStanje'
-import SkiniSaStanja from './components/SkiniSaStanja' // <--- IMPORT
-import Isporuke from './components/Isporuke' // <--- IMPORT
+import SkiniSaStanja from './components/SkiniSaStanja'
+import Isporuke from './components/Isporuke'
 
-// Pomocna funkcija za ID
+// Pomocna funkcija za ID (koristi se samo ako bas mora)
 const generateId = () => {
   return (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
     ? crypto.randomUUID()
@@ -20,18 +20,20 @@ function App() {
   // --- GLAVNA FUNKCIJA ZA UCITAVANJE ---
   const ucitajPodatke = async () => {
     try {
-      console.log("App.jsx: Osvežavam podatke iz baze...") // Debug ispis
+      // console.log("App.jsx: Osvežavam podatke iz baze...") 
       const data = await window.api.getProducts()
       
       if (Array.isArray(data)) {
-        const sigurniPodaci = data.map((p) => ({
+        const sigurniPodaci = data.map((p, index) => ({
           ...p,
-          id: p.id || generateId(),
+          // --- POPRAVKA ZA STABILNOST ---
+          // Ako proizvod nema ID, koristimo 'temp-index' umesto random broja.
+          // Ovo sprečava da React misli da su svi podaci novi i da "zabode".
+          id: p.id ? String(p.id) : `temp-${index}`, 
           stanje: Number(p.stanje) || 0,
           cena: Number(p.cena) || 0
         }))
         
-        // Bitno: React prepoznaje promenu samo ako je novi niz
         setProizvodi([...sigurniPodaci]) 
       } else {
         setProizvodi([])
@@ -47,11 +49,18 @@ function App() {
     ucitajPodatke()
   }, [aktivnaStranica])
 
-  // Funkcije za brisanje i dodavanje
+  // --- FUNKCIJA ZA BRISANJE (POPRAVLJENA) ---
   const obrisiProizvod = async (id) => {
-    if (confirm('Da li ste sigurni da želite da obrišete ovaj proizvod?')) {
-      await window.api.deleteProduct(id)
-      await ucitajPodatke() 
+    // UKLONIO SAM "confirm" JER ON ZAMRZAVA EKRAN U ELECTRONU!
+    // Kasnije možemo napraviti lepši React modal za potvrdu.
+    // if (confirm('Da li ste sigurni...')) { ... } <--- OVO JE PRAVILO PROBLEM
+    
+    try {
+        await window.api.deleteProduct(id)
+        // Odmah nakon brisanja osvežavamo podatke
+        await ucitajPodatke() 
+    } catch (err) {
+        console.error("Greška pri brisanju:", err)
     }
   }
 
@@ -80,12 +89,7 @@ function App() {
         {aktivnaStranica === 'pocetna' && (
           <Dashboard 
             proizvodi={proizvodi} 
-            
-            // --- OVO JE KLJUČNO! OVO JE FALILO ---
-            // Ovim dajemo Dashboard-u daljinski upravljač da osveži sve
             osveziPodatke={ucitajPodatke} 
-            // -------------------------------------
-            
             onDelete={obrisiProizvod} 
             onUpdate={azurirajProizvod} 
           />
@@ -104,10 +108,12 @@ function App() {
           <DodajNaStanje />
         )}
 
+        {/* SKINI SA STANJA / PRODAJA */}
         {aktivnaStranica === 'prodaja' && (
           <SkiniSaStanja />
         )}
         
+        {/* ISPORUKE */}
         {aktivnaStranica === 'isporuke' && (
           <Isporuke />
         )}

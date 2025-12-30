@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import EditProductModal from './EditProductModal'
 import DetaljiModal from './DetaljiModal'
 
-// --- KOMPONENTA ZA RED (Van glavne funkcije) ---
+// --- KOMPONENTA ZA RED ---
 const RedTabele = ({ p, dobijBojuReda, naKlik, naIzmenu, naBrisanje }) => {
   const [hover, setHover] = useState(false)
-  const trenutnaBoja = hover ? '#fff9c4' : dobijBojuReda(p.stanje)
+  const trenutnaBoja = hover ? '#4f944bff' : dobijBojuReda(p.stanje)
 
   return (
     <tr 
-      onClick={() => naKlik(p)}
+      onClick={() => naKlik(p.id)} 
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{ 
@@ -27,55 +27,62 @@ const RedTabele = ({ p, dobijBojuReda, naKlik, naIzmenu, naBrisanje }) => {
         {p.stanje}
       </td>
       <td style={{ padding: '12px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-        <button onClick={() => naIzmenu(p)} style={{ marginRight: '8px', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.2em' }}>✏️</button>
-        <button onClick={() => naBrisanje(p.id)} style={{ color: 'red', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.2em' }}>🗑️</button>
+        <button onClick={() => naIzmenu(p)} style={{ marginRight: '10px', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.2em' }} title="Izmeni">✏️</button>
+        <button onClick={() => naBrisanje(p.id)} style={{ color: 'red', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.2em' }} title="Obriši">🗑️</button>
       </td>
     </tr>
   )
 }
 
+// --- GLAVNA KOMPONENTA ---
 export default function Dashboard({ proizvodi, onDelete, onUpdate, osveziPodatke }) {
   const [trazenaRec, setTrazenaRec] = useState("")
   const [sortiranje, setSortiranje] = useState("naziv")
   
-  // Stanja za modale
-  const [odabraniProizvod, setOdabraniProizvod] = useState(null) 
+  const [odabraniProizvodId, setOdabraniProizvodId] = useState(null) 
   const [proizvodZaIzmenu, setProizvodZaIzmenu] = useState(null)
 
-  // --- OVO JE KLJUČNO ZA AZURIRANJE MODALA ---
-  // Kada se "proizvodi" promene (jer je DetaljiModal pozvao osveziSve),
-  // ovaj kod pronalazi novu verziju tog proizvoda i odmah je ubacuje u modal!
-  useEffect(() => {
-    if (odabraniProizvod) {
-        // Nadji najnoviju verziju trenutno otvorenog proizvoda
-        const osvezenProizvod = proizvodi.find(p => String(p.id) === String(odabraniProizvod.id))
-        
-        // Ako postoji (nije obrisan), azuriraj modal
-        if (osvezenProizvod) {
-            setOdabraniProizvod(osvezenProizvod)
-        }
-    }
-  }, [proizvodi]) // Prati svaku promenu u glavnoj listi
+  // --- OVO REŠAVA ZALEĐIVANJE EKRANA ---
+  const handleBrisanje = async (id) => {
+    // 1. Resetuj selekciju da ne bi puklo ako je taj otvoren
+    if (odabraniProizvodId === id) setOdabraniProizvodId(null);
+    
+    // 2. Pozovi brisanje
+    await onDelete(id);
 
-  // Filtriranje
-  const filtriraniLista = (proizvodi || []).filter(p => {
-    if (!p) return false
+    // 3. TRIK: Simuliraj promenu veličine prozora da "probudiš" Electron
+    // Ovo rešava problem gde moraš da minimizuješ da bi video promene
+    setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+    }, 100);
+  }
+
+  // --- LOGIKA PRIKAZA ---
+  const odabraniProizvod = useMemo(() => {
+    if (!odabraniProizvodId) return null;
+    return proizvodi.find(p => String(p.id) === String(odabraniProizvodId)) || null;
+  }, [proizvodi, odabraniProizvodId]);
+
+  const filtriraniLista = useMemo(() => {
     const term = trazenaRec.toLowerCase()
-    const naziv = p.naziv ? String(p.naziv).toLowerCase() : ""
-    const sifra = p.id ? String(p.id).toLowerCase() : ""
-    return naziv.includes(term) || sifra.includes(term)
-  }).sort((a, b) => {
-    if (sortiranje === 'stanje') {
-      return (a.stanje || 0) - (b.stanje || 0)
-    } else {
-      return (a.naziv || "").localeCompare(b.naziv || "")
-    }
-  })
+    return (proizvodi || []).filter(p => {
+        if (!p) return false
+        const naziv = (p.naziv || "").toLowerCase()
+        const sifra = String(p.id || "").toLowerCase()
+        return naziv.includes(term) || sifra.includes(term)
+    }).sort((a, b) => {
+        if (sortiranje === 'stanje') {
+          return (a.stanje || 0) - (b.stanje || 0)
+        } else {
+          return (a.naziv || "").localeCompare(b.naziv || "")
+        }
+    })
+  }, [proizvodi, trazenaRec, sortiranje])
 
   const dobijBojuReda = (stanje) => {
     if (stanje === undefined || stanje === null) return '#ffffff';
-    if (stanje <= 10) return '#ffebee' 
-    if (stanje > 10 && stanje <= 50) return '#fff3e0' 
+    if (stanje <= 10) return '#eca0acff' 
+    if (stanje > 10 && stanje <= 50) return '#cdaf7fff' 
     return '#ffffff' 
   }
 
@@ -86,7 +93,7 @@ export default function Dashboard({ proizvodi, onDelete, onUpdate, osveziPodatke
       <div style={{ padding: '20px', background: 'white', borderBottom: '1px solid #ddd', display: 'flex', gap: '15px', alignItems: 'center' }}>
         <input 
           type="text" 
-          placeholder="🔍 Pretraži lager..." 
+          placeholder="🔍 Pretraži (naziv ili šifra)..." 
           value={trazenaRec}
           onChange={(e) => setTrazenaRec(e.target.value)} 
           style={{ flex: 1, padding: '12px', fontSize: '16px', borderRadius: '6px', border: '1px solid #bdc3c7', outline: 'none' }}
@@ -120,18 +127,19 @@ export default function Dashboard({ proizvodi, onDelete, onUpdate, osveziPodatke
                   key={p.id} 
                   p={p} 
                   dobijBojuReda={dobijBojuReda}
-                  naKlik={setOdabraniProizvod}
+                  naKlik={setOdabraniProizvodId}
                   naIzmenu={setProizvodZaIzmenu}
-                  naBrisanje={onDelete}
+                  naBrisanje={handleBrisanje} // <-- KORISTIMO NOVU FUNKCIJU
                 />
               ))
             ) : (
-              <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center' }}>Nema rezultata</td></tr>
+              <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#7f8c8d' }}>Nema rezultata za "{trazenaRec}"</td></tr>
             )}
           </tbody>
         </table>
       </div>
       
+      {/* MODALI */}
       {proizvodZaIzmenu && (
         <EditProductModal 
           proizvod={proizvodZaIzmenu} 
@@ -143,8 +151,8 @@ export default function Dashboard({ proizvodi, onDelete, onUpdate, osveziPodatke
       {odabraniProizvod && (
         <DetaljiModal 
             proizvod={odabraniProizvod} 
-            onClose={() => setOdabraniProizvod(null)}
-            osveziSve={osveziPodatke} // Prosleđujemo funkciju za osvežavanje
+            onClose={() => setOdabraniProizvodId(null)}
+            osveziSve={osveziPodatke} 
         />
       )}
 

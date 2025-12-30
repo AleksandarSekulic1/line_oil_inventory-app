@@ -259,6 +259,47 @@ app.whenReady().then(() => {
     })
     return true
   })
+
+  // 11. OBRIŠI ISPORUKU I VRATI NA STANJE (NOVO!)
+  // ---------------------------------------------------------
+  // UNIVERZALNO BRISANJE STAVKE IZ ISTORIJE (I POPRAVKA STANJA)
+  // ---------------------------------------------------------
+  ipcMain.handle('delete-history-entry', async (event, idStavke) => {
+    console.log("--- BRISANJE STAVKE:", idStavke)
+    const db = await connectDB()
+    
+    await db.update((data) => {
+      // 1. Nadji stavku koju brisemo
+      const stavka = data.istorija.find(i => String(i.id) === String(idStavke))
+      
+      if (!stavka) {
+        console.log("Stavka nije pronadjena!")
+        return // Nema sta da se radi
+      }
+
+      // 2. Nadji proizvod na koji se ovo odnosi
+      const proizvod = data.proizvodi.find(p => String(p.id) === String(stavka.proizvodId))
+      
+      if (proizvod) {
+        const kolicinaZaBrisanje = parseInt(stavka.kolicina)
+        const trenutnoStanje = parseInt(proizvod.stanje) || 0
+
+        // --- MATEMATIKA ---
+        // Ako brisemo stavku koja je DODALA 7 komada, moramo ODUZETI 7.
+        // Ako brisemo stavku koja je ODUZELA 5 komada (-5), moramo ODUZETI -5 (sto je +5).
+        // Dakle formula je uvek: STANJE = STANJE - KOLICINA
+        const novoStanje = trenutnoStanje - kolicinaZaBrisanje
+
+        proizvod.stanje = novoStanje
+        console.log(`Korekcija stanja za ${proizvod.naziv}: ${trenutnoStanje} -> ${novoStanje}`)
+      }
+
+      // 3. Obrisi stavku iz istorije
+      data.istorija = data.istorija.filter(i => String(i.id) !== String(idStavke))
+    })
+
+    return true
+  })
   
   // ------------------------------------
 

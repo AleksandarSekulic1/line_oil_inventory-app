@@ -13,6 +13,8 @@ const api = {
   editHistoryEntry: (data) => ipcRenderer.invoke('edit-history-entry', data),
   getAllDeliveries: () => ipcRenderer.invoke('get-all-deliveries'),
   updateDeliveryGroup: (data) => ipcRenderer.invoke('update-delivery-group', data),
+  // U preload/index.js
+deleteHistoryEntry: (id) => ipcRenderer.invoke('delete-history-entry', id),
 }
 
 // Expose APIs
