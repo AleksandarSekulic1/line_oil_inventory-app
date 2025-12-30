@@ -14,7 +14,9 @@ const api = {
   getAllDeliveries: () => ipcRenderer.invoke('get-all-deliveries'),
   updateDeliveryGroup: (data) => ipcRenderer.invoke('update-delivery-group', data),
   // U preload/index.js
-deleteHistoryEntry: (id) => ipcRenderer.invoke('delete-history-entry', id),
+  deleteHistoryEntry: (id) => ipcRenderer.invoke('delete-history-entry', id),
+  exportData: () => ipcRenderer.invoke('export-data'),
+  importData: () => ipcRenderer.invoke('import-data'),
 }
 
 // Expose APIs

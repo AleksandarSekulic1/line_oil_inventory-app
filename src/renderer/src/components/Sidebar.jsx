@@ -71,15 +71,22 @@ export default function Sidebar({ aktivnaStranica, setAktivnaStranica }) {
         
         <button 
           onClick={() => setAktivnaStranica('izvestaji')}
-          style={{ ...dugmeStil('izvestaji'), color: '#f1c40f' }} // Zlatkasta boja da se istakne
+          style={{ ...dugmeStil('izvestaji')}} // Zlatkasta boja da se istakne
         >
           📊 Izveštaji
+        </button>
+
+        <button 
+          onClick={() => setAktivnaStranica('podesavanja')}
+          style={{ ...dugmeStil('podesavanja'), marginTop: 'auto' }} // auto ga gura na dno ako je flex kontejner
+        >
+          ⚙️ Podešavanja
         </button>
 
       </nav>
 
       <div style={{ padding: '20px', fontSize: '12px', color: '#7f8c8d', textAlign: 'center' }}>
-        &copy; 2025 Line Oil System
+        &copy; 2026  Line  Oil  System, Application created by Aleksandar Sekulic
       </div>
     </div>
   )

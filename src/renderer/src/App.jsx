@@ -6,6 +6,7 @@ import DodajNaStanje from './components/DodajNaStanje'
 import SkiniSaStanja from './components/SkiniSaStanja'
 import Isporuke from './components/Isporuke'
 import Izvestaji from './components/Izvestaji' // <--- 1. NOVI IMPORT
+import Podesavanja from './components/Podesavanja'
 
 // Pomocna funkcija za ID (koristi se samo ako bas mora)
 const generateId = () => {
@@ -113,6 +114,10 @@ function App() {
         {/* --- 2. NOVA RUTA ZA IZVEŠTAJE --- */}
         {aktivnaStranica === 'izvestaji' && (
           <Izvestaji />
+        )}
+
+        {aktivnaStranica === 'podesavanja' && (
+          <Podesavanja />
         )}
 
       </div>

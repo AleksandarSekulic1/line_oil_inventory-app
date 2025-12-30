@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -299,6 +299,96 @@ app.whenReady().then(() => {
     })
 
     return true
+  })
+
+  // ---------------------------------------------------------
+  // 1. IZVOZ PODATAKA (EXPORT)
+  // ---------------------------------------------------------
+  ipcMain.handle('export-data', async () => {
+    const db = await connectDB()
+    const data = db.data // Uzimamo sve podatke (proizvodi + istorija)
+
+    // Otvaramo prozor da korisnik bira gde ce da sacuva
+    const { filePath } = await dialog.showSaveDialog({
+      title: 'Sačuvaj rezervnu kopiju (Backup)',
+      defaultPath: `LineOil-Backup-${new Date().toISOString().slice(0, 10)}.json`,
+      filters: [{ name: 'JSON Database', extensions: ['json'] }]
+    })
+
+    if (filePath) {
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2))
+      return { success: true, message: 'Podaci uspešno sačuvani!' }
+    }
+    return { success: false, message: 'Otkazano.' }
+  })
+
+  // ---------------------------------------------------------
+  // 2. UVOZ PODATAKA (IMPORT) - SA PAMETNOM PROVEROM DUPLIKATA
+  // ---------------------------------------------------------
+  ipcMain.handle('import-data', async () => {
+    // 1. Korisnik bira fajl
+    const { filePaths } = await dialog.showOpenDialog({
+      title: 'Izaberi backup fajl',
+      properties: ['openFile'],
+      filters: [{ name: 'JSON Database', extensions: ['json'] }]
+    })
+
+    if (filePaths.length === 0) return { success: false, message: 'Nije izabran fajl.' }
+
+    try {
+      // 2. Ucitavamo fajl koji korisnik hoce da uveze
+      const rawData = fs.readFileSync(filePaths[0])
+      const importedData = JSON.parse(rawData)
+
+      // Provera da li je fajl validan
+      if (!importedData.proizvodi || !importedData.istorija) {
+        return { success: false, message: 'Pogrešan format fajla!' }
+      }
+
+      const db = await connectDB()
+
+      await db.update((currentData) => {
+        let brojNovihProizvoda = 0
+        let brojNovihStavki = 0
+
+        // A) SPAJANJE PROIZVODA
+        importedData.proizvodi.forEach(noviP => {
+          // Da li vec postoji proizvod sa ovim ID-jem?
+          const postoji = currentData.proizvodi.find(p => String(p.id) === String(noviP.id))
+          if (!postoji) {
+            currentData.proizvodi.push(noviP)
+            brojNovihProizvoda++
+          }
+        })
+
+        // B) SPAJANJE ISTORIJE (PAMETNA PROVERA)
+        importedData.istorija.forEach(novaS => {
+          // 1. Provera po ID-ju (ako je bas isti zapis tehnicki)
+          const postojiId = currentData.istorija.find(s => String(s.id) === String(novaS.id))
+
+          // 2. LOGICKA PROVERA (Ono sto si trazio: Datum + Proizvod + Kolicina)
+          // Trazimo da li vec postoji zapis za ISTI proizvod, na ISTI dan sa ISTOM kolicinom
+          const logickiDuplikat = currentData.istorija.find(s => 
+             String(s.proizvodId) === String(novaS.proizvodId) &&
+             s.datum === novaS.datum &&
+             String(s.kolicina) === String(novaS.kolicina)
+          )
+
+          if (!postojiId && !logickiDuplikat) {
+            currentData.istorija.push(novaS)
+            brojNovihStavki++
+          }
+        })
+
+        console.log(`Uvezeno: ${brojNovihProizvoda} proizvoda, ${brojNovihStavki} stavki istorije.`)
+      })
+
+      return { success: true, message: 'Podaci uspešno uvezeni i spojeni!' }
+
+    } catch (err) {
+      console.error('Greska pri importu:', err)
+      return { success: false, message: 'Došlo je do greške prilikom uvoza.' }
+    }
   })
   
   // ------------------------------------
