@@ -55,7 +55,7 @@ export default function Sidebar({ aktivnaStranica, setAktivnaStranica }) {
         </button>
         <button 
           onClick={() => setAktivnaStranica('prodaja')}
-          style={{ ...dugmeStil('prodaja') }} // Malo crvenkasto da se razlikuje
+          style={{ ...dugmeStil('prodaja') }} 
         >
           📉 Skini / Prodaj
         </button>
@@ -65,6 +65,17 @@ export default function Sidebar({ aktivnaStranica, setAktivnaStranica }) {
         >
           🚚 Isporuke & Računi
         </button>
+
+        {/* --- NOVO DUGME ZA IZVEŠTAJE --- */}
+        <div style={{ margin: '15px 0', borderTop: '1px solid #34495e' }}></div>
+        
+        <button 
+          onClick={() => setAktivnaStranica('izvestaji')}
+          style={{ ...dugmeStil('izvestaji'), color: '#f1c40f' }} // Zlatkasta boja da se istakne
+        >
+          📊 Izveštaji
+        </button>
+
       </nav>
 
       <div style={{ padding: '20px', fontSize: '12px', color: '#7f8c8d', textAlign: 'center' }}>

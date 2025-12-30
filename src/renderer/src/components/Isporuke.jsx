@@ -159,7 +159,7 @@ export default function Isporuke() {
 // --- REDIZAJNIRANA KARTICA (Inline CSS) ---
 function KarticaIsporuke({ grupa, proizvodiInfo, onUpdate }) {
   const [napomena, setNapomena] = useState(grupa.napomena);
-  const GRANICA_ZA_ALARM = 3; 
+  const GRANICA_ZA_ALARM = 10; 
 
   const danas = new Date();
   const datumIsporuke = new Date(grupa.datumIsporuke);

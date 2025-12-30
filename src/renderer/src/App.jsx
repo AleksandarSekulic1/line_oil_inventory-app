@@ -5,6 +5,7 @@ import AddProduct from './components/AddProduct'
 import DodajNaStanje from './components/DodajNaStanje'
 import SkiniSaStanja from './components/SkiniSaStanja'
 import Isporuke from './components/Isporuke'
+import Izvestaji from './components/Izvestaji' // <--- 1. NOVI IMPORT
 
 // Pomocna funkcija za ID (koristi se samo ako bas mora)
 const generateId = () => {
@@ -20,15 +21,11 @@ function App() {
   // --- GLAVNA FUNKCIJA ZA UCITAVANJE ---
   const ucitajPodatke = async () => {
     try {
-      // console.log("App.jsx: Osvežavam podatke iz baze...") 
       const data = await window.api.getProducts()
       
       if (Array.isArray(data)) {
         const sigurniPodaci = data.map((p, index) => ({
           ...p,
-          // --- POPRAVKA ZA STABILNOST ---
-          // Ako proizvod nema ID, koristimo 'temp-index' umesto random broja.
-          // Ovo sprečava da React misli da su svi podaci novi i da "zabode".
           id: p.id ? String(p.id) : `temp-${index}`, 
           stanje: Number(p.stanje) || 0,
           cena: Number(p.cena) || 0
@@ -49,15 +46,10 @@ function App() {
     ucitajPodatke()
   }, [aktivnaStranica])
 
-  // --- FUNKCIJA ZA BRISANJE (POPRAVLJENA) ---
+  // --- FUNKCIJA ZA BRISANJE ---
   const obrisiProizvod = async (id) => {
-    // UKLONIO SAM "confirm" JER ON ZAMRZAVA EKRAN U ELECTRONU!
-    // Kasnije možemo napraviti lepši React modal za potvrdu.
-    // if (confirm('Da li ste sigurni...')) { ... } <--- OVO JE PRAVILO PROBLEM
-    
     try {
         await window.api.deleteProduct(id)
-        // Odmah nakon brisanja osvežavamo podatke
         await ucitajPodatke() 
     } catch (err) {
         console.error("Greška pri brisanju:", err)
@@ -116,6 +108,11 @@ function App() {
         {/* ISPORUKE */}
         {aktivnaStranica === 'isporuke' && (
           <Isporuke />
+        )}
+
+        {/* --- 2. NOVA RUTA ZA IZVEŠTAJE --- */}
+        {aktivnaStranica === 'izvestaji' && (
+          <Izvestaji />
         )}
 
       </div>
